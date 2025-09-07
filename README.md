@@ -99,6 +99,15 @@ A wise, ancient golden dragon with banana-shaped horns, guarding a mystical bana
     ```
     The application will be available at `http://localhost:5173` (or another port if 5173 is in use).
 
+5.  **(Optional) Generate Character Rotations:**
+    To generate the 360° rotational views for the characters, run the `setup-rotations` script.
+    ```bash
+    # Generate rotations for ALL characters
+    npm run setup-rotations
+    # Or, generate for a single character (e.g., sprout-mole)
+    npm run setup-rotations -- sprout-mole
+    ```
+
 ### Available Scripts
 
 - `npm run dev`: Starts the Vite development server.
@@ -106,3 +115,4 @@ A wise, ancient golden dragon with banana-shaped horns, guarding a mystical bana
 - `npm run preview`: Serves the production build locally.
 - `npm run setup-basechar`: Only generates the base character images.
 - `npm run setup`: Installs dependencies and generates base character images.
+- `npm run setup-rotations`: Generates 360° rotational views for characters.

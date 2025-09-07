@@ -1,0 +1,37 @@
+.character-selector-container {
+  padding: 2rem;
+}
+
+.character-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1.5rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.character-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  overflow: hidden;
+}
+
+.character-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+.character-card img {
+  width: 100%;
+  height: auto;
+  background-color: #f5f5f5;
+}
+
+.character-card h3 {
+  padding: 0.5rem 1rem 1rem;
+  margin: 0;
+  font-size: 1.1rem;
+}

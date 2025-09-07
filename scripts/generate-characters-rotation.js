@@ -1,5 +1,6 @@
 import { GoogleGenAI } from "@google/genai";
 import * as fs from "node:fs";
+import sharp from "sharp";
 
 // Character names for file organization
 const characters = [
@@ -13,20 +14,12 @@ const characters = [
   { name: "banana-sage", displayName: "Banana Sage" }
 ];
 
-// 12 rotation angles (every 30 degrees)
+// 4 rotation angles (every 90 degrees)
 const rotationAngles = [
   { angle: 0, description: "front view" },
-  { angle: 30, description: "30° clockwise from front" },
-  { angle: 60, description: "60° clockwise from front" },
-  { angle: 90, description: "right side view" },
-  { angle: 120, description: "120° clockwise from front" },
-  { angle: 150, description: "150° clockwise from front" },
+  { angle: 90, description: "profile view from the character's right side (character is looking left)" },
   { angle: 180, description: "back view" },
-  { angle: 210, description: "210° clockwise from front" },
-  { angle: 240, description: "240° clockwise from front" },
-  { angle: 270, description: "left side view" },
-  { angle: 300, description: "300° clockwise from front" },
-  { angle: 330, description: "330° clockwise from front" }
+  { angle: 270, description: "profile view from the character's left side (character is looking right)" }
 ];
 
 async function generateRotationalView(ai, sourceImagePath, characterName, angle, description, outputPath) {
@@ -45,19 +38,19 @@ async function generateRotationalView(ai, sourceImagePath, characterName, angle,
 
     // Create the rotation prompt
     const rotationPrompt = `
-Using this character figurine image, create a photorealistic, 3D rendered view of the same character rotated to show a ${description}.
+This is a technical task for a 3D turntable animation sequence.
+Using the provided image as the master reference for the character's appearance, generate a new image of the exact same figurine rotated on its circular base to a precise ${description} (${angle} degrees clockwise).
 
-IMPORTANT REQUIREMENTS:
-- Maintain the EXACT same character design, clothing, accessories, and proportions
-- Keep the same figurine material and finish quality
-- Preserve all original colors and textures
-- Maintain the same clean, solid light grey background (#F5F5F5)
-- Use consistent soft, even lighting that highlights the character's features
-- Show the character from a ${description} perspective
-- Keep the same professional collectible figurine aesthetic
-- Do NOT change any character details, only the viewing angle
+**Critical Constraints for Perfect Consistency:**
+1.  **Stationary Base and Camera**: The circular base the character stands on MUST NOT move, scale, or change its perspective. Imagine the camera is locked in place. The base's position, size, and shape in the output image must be identical to the input image.
+2.  **Object Rotation Only**: Only the character figurine itself rotates on top of the stationary base.
+3.  **Identical Appearance**: The character's design, colors, textures, and lighting must be absolutely identical to the source image. The lighting is fixed in the environment and does not rotate with the character.
+4.  **Precise Angle**: The character must be rotated to the exact specified angle. A 90-degree view must be a perfect profile view. A 180-degree view must be a perfect rear view.
 
-The rotation should be smooth and natural, as if the figurine was rotated ${angle} degrees clockwise on a turntable.
+**Summary of Action**:
+- **Input**: Image of a figurine at 0 degrees.
+- **Action**: Rotate ONLY the character model on its base by ${angle} degrees.
+- **Output**: Image from the same fixed camera, showing the rotated character on its unmoving base.
 `;
 
     const prompt = [
@@ -93,6 +86,57 @@ The rotation should be smooth and natural, as if the figurine was rotated ${angl
   }
 }
 
+async function generateFlippedView(ai, sourceImagePath, characterName, angle, description, outputPath) {
+  console.log(`Generating FLIPPED ${angle}° view for ${characterName}...`);
+  try {
+    const flippedImagePath = `public/rotations/${characterName.toLowerCase().replace(/ /g, '-')}/temp_flipped.png`;
+
+    // 1. Flip the 90-degree image horizontally
+    await sharp(sourceImagePath).flop().toFile(flippedImagePath);
+    console.log(`✓ Temporarily flipped image created: ${flippedImagePath}`);
+
+    // 2. Read the new flipped image
+    const imageData = fs.readFileSync(flippedImagePath);
+    const base64Image = imageData.toString("base64");
+
+    // 3. Create a new prompt to "fix" the flipped image
+    const fixPrompt = `
+This is a technical rendering task.
+The provided image is a horizontally flipped, low-quality reference.
+Your task is to re-render the character in this exact right-facing pose, but applying the correct, consistent lighting, textures, and high-quality finish of the original character style.
+
+**Critical Constraints:**
+1.  **Preserve Pose**: The character's right-facing profile pose from the input image is correct and MUST be preserved.
+2.  **Apply Correct Style**: Re-create the image with the high-quality, photorealistic 3D collectible figurine style.
+3.  **Fix Lighting**: The lighting should be soft and even, coming from the front, consistent with the rest of the animation sequence. Do not use the lighting from the flipped input image.
+4.  **Maintain Consistency**: Ensure the character's colors, textures, and the stationary circular base match the original front-facing view.
+
+**Summary of Action**:
+- **Input**: A low-quality, horizontally-flipped image showing the desired pose.
+- **Action**: Re-render the character in this exact pose using the correct, high-quality style and lighting.
+- **Output**: A clean, high-quality image of the character facing right.
+`;
+
+    const prompt = [{ text: fixPrompt }, { inlineData: { mimeType: "image/png", data: base64Image } }];
+
+    const response = await ai.models.generateContent({ model: "gemini-2.5-flash-image-preview", contents: prompt });
+
+    for (const part of response.candidates[0].content.parts) {
+      if (part.inlineData) {
+        const newImageData = part.inlineData.data;
+        const buffer = Buffer.from(newImageData, "base64");
+        fs.writeFileSync(outputPath, buffer);
+        console.log(`✓ Successfully created: ${outputPath}`);
+        // Clean up the temporary flipped image
+        fs.unlinkSync(flippedImagePath);
+        return;
+      }
+    }
+  } catch (error) {
+    console.error(`❌ Error generating flipped ${angle}° view for ${characterName}:`, error.message);
+  }
+}
+
 async function generateAllRotationalViews() {
   if (!process.env.GEMINI_API_KEY) {
     throw new Error("GEMINI_API_KEY is not set in your .env file");
@@ -100,7 +144,7 @@ async function generateAllRotationalViews() {
   
   const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
-  console.log("🎯 Starting 12-view rotation generation for all characters...\n");
+  console.log("🎯 Starting 4-view rotation generation for all characters...\n");
 
   for (const character of characters) {
     console.log(`\n📸 Processing ${character.displayName}...`);
@@ -114,25 +158,35 @@ async function generateAllRotationalViews() {
     // Source image path (your original front-facing character images)
     const sourceImagePath = `public/${character.name}.png`;
 
-    // Generate all 12 rotational views
-    for (let i = 0; i < rotationAngles.length; i++) {
-      const rotation = rotationAngles[i];
+    // Generate all 4 rotational views
+    for (const rotation of rotationAngles) {
       const outputPath = `${characterDir}/${character.name}_${rotation.angle.toString().padStart(3, '0')}.png`;
       
-      await generateRotationalView(
-        ai, 
-        sourceImagePath, 
-        character.displayName, 
-        rotation.angle, 
-        rotation.description, 
-        outputPath
-      );
+      if (rotation.angle === 270) {
+        // Use the special flipped-image technique for the 270-degree view
+        const ninetyDegreeImagePath = `${characterDir}/${character.name}_090.png`;
+        if (fs.existsSync(ninetyDegreeImagePath)) {
+          await generateFlippedView(ai, ninetyDegreeImagePath, character.displayName, rotation.angle, rotation.description, outputPath);
+        } else {
+          console.error(`Cannot generate 270° view because 90° view is missing: ${ninetyDegreeImagePath}`);
+        }
+      } else {
+        // Use the standard text-to-image generation for 0, 90, and 180 degrees
+        await generateRotationalView(
+          ai, 
+          sourceImagePath, 
+          character.displayName, 
+          rotation.angle, 
+          rotation.description, 
+          outputPath
+        );
+      }
       
       // Add a small delay to avoid rate limiting
       await new Promise(resolve => setTimeout(resolve, 1000));
     }
     
-    console.log(`✅ Completed all 12 views for ${character.displayName}`);
+    console.log(`✅ Completed all 4 views for ${character.displayName}`);
   }
 
   console.log("\n🎉 All rotational views generated successfully!");
@@ -140,71 +194,40 @@ async function generateAllRotationalViews() {
   console.log("public/rotations/");
   characters.forEach(char => {
     console.log(`  ├── ${char.name}/`);
-    console.log(`  │   ├── ${char.name}_000.png (0° - front)`);
-    console.log(`  │   ├── ${char.name}_030.png (30°)`);
-    console.log(`  │   ├── ${char.name}_060.png (60°)`);
-    console.log(`  │   ├── ${char.name}_090.png (90° - right side)`);
-    console.log(`  │   ├── ${char.name}_120.png (120°)`);
-    console.log(`  │   ├── ${char.name}_150.png (150°)`);
-    console.log(`  │   ├── ${char.name}_180.png (180° - back)`);
-    console.log(`  │   ├── ${char.name}_210.png (210°)`);
-    console.log(`  │   ├── ${char.name}_240.png (240°)`);
-    console.log(`  │   ├── ${char.name}_270.png (270° - left side)`);
-    console.log(`  │   ├── ${char.name}_300.png (300°)`);
-    console.log(`  │   └── ${char.name}_330.png (330°)`);
+    console.log(`  │   ├── ... (4 images: 000, 090, 180, 270)`);
   });
-}
-
-// Helper function to generate just one character's rotations (for testing)
-async function generateSingleCharacterRotations(characterName) {
-  if (!process.env.GEMINI_API_KEY) {
-    throw new Error("GEMINI_API_KEY is not set in your .env file");
-  }
-  
-  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-  const character = characters.find(char => char.name === characterName);
-  
-  if (!character) {
-    console.error(`Character "${characterName}" not found. Available characters:`, characters.map(c => c.name));
-    return;
-  }
-
-  console.log(`🎯 Generating 12 rotational views for ${character.displayName}...\n`);
-  
-  const characterDir = `public/rotations/${character.name}`;
-  if (!fs.existsSync(characterDir)) {
-    fs.mkdirSync(characterDir, { recursive: true });
-  }
-
-  const sourceImagePath = `public/${character.name}.png`;
-
-  for (let i = 0; i < rotationAngles.length; i++) {
-    const rotation = rotationAngles[i];
-    const outputPath = `${characterDir}/${character.name}_${rotation.angle.toString().padStart(3, '0')}.png`;
-    
-    await generateRotationalView(
-      ai, 
-      sourceImagePath, 
-      character.displayName, 
-      rotation.angle, 
-      rotation.description, 
-      outputPath
-    );
-    
-    await new Promise(resolve => setTimeout(resolve, 1000));
-  }
-  
-  console.log(`✅ Completed all 12 views for ${character.displayName}`);
 }
 
 // Main execution
 async function main() {
   try {
-    // Generate all characters (comment out if you want to test single character first)
-    await generateAllRotationalViews();
-    
-    // OR generate single character for testing (uncomment the line below)
-    // await generateSingleCharacterRotations("banana-buddy");
+    // Get character name from command line arguments, if provided
+    const characterArg = process.argv[2];
+
+    if (characterArg) {
+      console.log(`Single character mode: ${characterArg}`);
+      const characterToGen = characters.find(c => c.name === characterArg);
+      if (!characterToGen) {
+        console.error(`❌ Character "${characterArg}" not found.`);
+        console.log("Available characters:", characters.map(c => c.name).join(", "));
+        return;
+      }
+      
+      // Temporarily modify the characters array to only include the selected one
+      const originalCharacters = [...characters];
+      characters.length = 0;
+      characters.push(characterToGen);
+
+      await generateAllRotationalViews();
+
+      // Restore original characters array if needed elsewhere
+      characters.length = 0;
+      characters.push(...originalCharacters);
+
+    } else {
+      console.log("All characters mode. No argument provided.");
+      await generateAllRotationalViews();
+    }
     
   } catch (error) {
     console.error("❌ Error in main execution:", error);

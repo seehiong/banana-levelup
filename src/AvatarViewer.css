@@ -1,0 +1,80 @@
+.avatar-viewer-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem;
+  height: calc(100vh - 4rem);
+  box-sizing: border-box;
+}
+
+.back-button {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  padding: 10px 15px;
+  font-size: 1rem;
+  cursor: pointer;
+  background-color: #fff;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  transition: background-color 0.2s;
+}
+
+.back-button:hover {
+  background-color: #f0f0f0;
+}
+
+.avatar-info {
+  margin-bottom: 1rem;
+}
+
+.avatar-display {
+  cursor: grab;
+  user-select: none; /* Prevents text selection while dragging */
+}
+
+.avatar-display:active {
+  cursor: grabbing;
+}
+
+.avatar-display img {
+  max-width: 80vw;
+  max-height: 60vh;
+  object-fit: contain;
+  pointer-events: none; /* Prevents image ghosting on drag */
+}
+
+.instructions {
+  margin-top: 1rem;
+  color: #666;
+  font-style: italic;
+}
+.controls-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.control-button {
+  padding: 8px 16px;
+  font-size: 1rem;
+  cursor: pointer;
+  background-color: #fff;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  transition: background-color 0.2s;
+  min-width: 100px;
+}
+
+.control-button:hover {
+  background-color: #f0f0f0;
+}
+
+.loading-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 60vh; /* Same as max-height of image */
+}
