@@ -3,13 +3,14 @@ import * as fs from "node:fs";
 
 // Character names for file organization
 const characters = [
-  { name: "banana-buddy", displayName: "Banana Buddy" },
-  { name: "banana-belle", displayName: "Banana Belle" },
-  { name: "study-sprint", displayName: "Study Sprint" },
-  { name: "campus-champ", displayName: "Campus Champ" },
-  { name: "banana-pro", displayName: "Banana Pro" },
-  { name: "career-climber", displayName: "Career Climber" },
-  { name: "executive-elite", displayName: "Executive Elite" }
+  { name: "banana-splash", displayName: "Banana Splash" },
+  { name: "sprout-mole", displayName: "Sprout Mole" },
+  { name: "desert-dash", displayName: "Desert Dash" },
+  { name: "bamboo-breeze", displayName: "Bamboo Breeze" },
+  { name: "code-monkey", displayName: "Code Monkey" },
+  { name: "artisan-owl", displayName: "Artisan Owl" },
+  { name: "captain-canary", displayName: "Captain Canary" },
+  { name: "banana-sage", displayName: "Banana Sage" }
 ];
 
 // 12 rotation angles (every 30 degrees)
