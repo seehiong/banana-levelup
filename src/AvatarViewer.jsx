@@ -28,6 +28,7 @@ const AvatarViewer = ({ character, onBack }) => {
   const [checkingJpeg, setCheckingJpeg] = useState(true);
   const dragStartX = useRef(0);
   const dragStartRotationIndex = useRef(0);
+  const avatarDisplayRef = useRef(null);
 
   const currentViews = showAll8 ? ALL_VIEWS : PNG_VIEWS;
   const totalViews = currentViews.length;
@@ -117,6 +118,20 @@ const AvatarViewer = ({ character, onBack }) => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [totalViews]);
 
+  // Effect for handling the wheel event with an active listener
+  useEffect(() => {
+    const element = avatarDisplayRef.current;
+    if (!element) return;
+
+    // The { passive: false } option is crucial to allow preventDefault()
+    element.addEventListener('wheel', handleWheel, { passive: false });
+
+    return () => {
+      element.removeEventListener('wheel', handleWheel);
+    };
+  }, [isLoading]); // Re-attach if the element is re-rendered (e.g., after loading)
+
+
   const handleMouseDown = (e) => {
     setIsDragging(true);
     dragStartX.current = e.clientX;
@@ -127,13 +142,24 @@ const AvatarViewer = ({ character, onBack }) => {
     if (!isDragging) return;
     const dragDistance = e.clientX - dragStartX.current;
     const sensitivity = 20;
-    const rotationChange = Math.round(dragDistance / sensitivity);
-    const newIndex = (dragStartRotationIndex.current - rotationChange + (totalViews * 100)) % totalViews;
+    const rotationChange = Math.floor(dragDistance / sensitivity);
+    const newIndex = (dragStartRotationIndex.current - rotationChange % totalViews + totalViews) % totalViews;
     setRotationIndex(newIndex);
   };
 
   const handleMouseUp = () => {
     setIsDragging(false);
+  };
+
+  const handleWheel = (e) => {
+    e.preventDefault(); // Prevent the page from scrolling
+    if (e.deltaY < 0) {
+      // Scroll up
+      setRotationIndex((prev) => (prev - 1 + totalViews) % totalViews);
+    } else {
+      // Scroll down
+      setRotationIndex((prev) => (prev + 1) % totalViews);
+    }
   };
 
   const toggleViewMode = () => {
@@ -170,17 +196,18 @@ const AvatarViewer = ({ character, onBack }) => {
       ) : (
         <div 
           className="avatar-display"
+          ref={avatarDisplayRef}
           onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
+          onMouseMove={isDragging ? handleMouseMove : null}
+          onMouseLeave={handleMouseUp} // Stop dragging if mouse leaves the image area
           onMouseUp={handleMouseUp}
-          onMouseLeave={handleMouseUp}
         >
           <img 
             src={getImagePath(rotationIndex)} 
             alt={`Missing: ${getImagePath(rotationIndex)}`} 
           />
           <p className="instructions">
-            Click and drag, or use ← → arrow keys to rotate. 
+            Scroll, click & drag, or use ← → arrow keys to rotate. 
             {showAll8 ? ' (8 views)' : ' (4 views)'}
           </p>
         </div>
