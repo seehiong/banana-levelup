@@ -24,13 +24,46 @@
   background-color: #f0f0f0;
 }
 
+.view-toggle {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 1rem;
+  position: absolute;
+  top: 20px;
+  right: 20px;
+}
+
+.toggle-button {
+  padding: 8px 16px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  transition: background-color 0.2s;
+}
+
+.toggle-button:hover {
+  background-color: #0056b3;
+}
+
+.view-counter {
+  font-size: 0.9rem;
+  color: #666;
+  font-weight: 500;
+  min-width: 50px;
+  text-align: center;
+}
+
 .avatar-info {
   margin-bottom: 1rem;
 }
 
 .avatar-display {
   cursor: grab;
-  user-select: none; /* Prevents text selection while dragging */
+  user-select: none;
 }
 
 .avatar-display:active {
@@ -41,7 +74,7 @@
   max-width: 80vw;
   max-height: 60vh;
   object-fit: contain;
-  pointer-events: none; /* Prevents image ghosting on drag */
+  pointer-events: none;
 }
 
 .instructions {
@@ -54,5 +87,5 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 60vh; /* Same as max-height of image */
+  height: 60vh;
 }

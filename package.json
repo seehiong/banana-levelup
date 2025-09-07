@@ -18,8 +18,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "setup-basechar": "node -r dotenv/config ./scripts/generate-base-characters.js",
     "setup": "npm install && npm run setup-basechar",
+    "setup-basechar": "node -r dotenv/config ./scripts/generate-base-characters.js",
     "setup-rotations": "node -r dotenv/config ./scripts/generate-characters-rotation.js"
   }
 }
