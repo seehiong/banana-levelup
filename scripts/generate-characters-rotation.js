@@ -4,7 +4,7 @@ import sharp from "sharp";
 
 // Character names for file organization
 const characters = [
-  { name: "banana-splash", displayName: "Banana Splash" },
+  { name: "banana-scout", displayName: "Banana Scout" },
   { name: "sprout-mole", displayName: "Sprout Mole" },
   { name: "desert-dash", displayName: "Desert Dash" },
   { name: "bamboo-breeze", displayName: "Bamboo Breeze" },
@@ -14,58 +14,61 @@ const characters = [
   { name: "banana-sage", displayName: "Banana Sage" }
 ];
 
-// 4 rotation angles (every 90 degrees)
-const rotationAngles = [
-  { angle: 0, description: "front view" },
-  { angle: 90, description: "profile view from the character's right side (character is looking left)" },
-  { angle: 180, description: "back view" },
-  { angle: 270, description: "profile view from the character's left side (character is looking right)" }
+// Rotation directions - source image is front-facing
+const rotationDirections = [
+  { direction: "front", description: "front-facing view", method: "copy" },
+  { direction: "left", description: "left-facing view", method: "generate" },
+  { direction: "back", description: "back-facing view", method: "generate" },
+  { direction: "right", description: "right-facing view", method: "generate" },
 ];
 
-async function generateRotationalView(ai, sourceImagePath, characterName, angle, description, outputPath) {
-  console.log(`Generating ${angle}° view for ${characterName}...`);
-  
+async function generateRotationalView(ai, sourceImagePath, characterName, direction, description, outputPath) {
+  console.log(`Generating ${direction} view for ${characterName}...`);
   try {
-    // Check if source image exists
-    if (!fs.existsSync(sourceImagePath)) {
-      console.error(`Source image not found: ${sourceImagePath}`);
-      return;
-    }
+    const promptParts = [];
 
-    // Read the source image
-    const imageData = fs.readFileSync(sourceImagePath);
-    const base64Image = imageData.toString("base64");
+    // Dynamically build the prompt based on the direction
+    promptParts.push({
+      text: `
+This is a technical task for generating consistent character rotations for a game.
 
-    // Create the rotation prompt
-    const rotationPrompt = `
-This is a technical task for a 3D turntable animation sequence.
-Using the provided image as the master reference for the character's appearance, generate a new image of the exact same figurine rotated on its circular base to a precise ${description} (${angle} degrees clockwise).
+**Reference Information:**
+The provided source image shows the character facing FRONT.
+
+**Task:**
+Generate a new image of the exact same character rotated to face ${direction.toUpperCase()}.
 
 **Critical Constraints for Perfect Consistency:**
-1.  **Stationary Base and Camera**: The circular base the character stands on MUST NOT move, scale, or change its perspective. Imagine the camera is locked in place. The base's position, size, and shape in the output image must be identical to the input image.
-2.  **Object Rotation Only**: Only the character figurine itself rotates on top of the stationary base.
-3.  **Identical Appearance**: The character's design, colors, textures, and lighting must be absolutely identical to the source image. The lighting is fixed in the environment and does not rotate with the character.
-4.  **Precise Angle**: The character must be rotated to the exact specified angle. A 90-degree view must be a perfect profile view. A 180-degree view must be a perfect rear view.
+1. **Stationary Base**: The circular base the character stands on MUST NOT move or change.
+2. **Character Rotation Only**: Only rotate the character itself on top of the stationary base.
+3. **Consistent Lighting**: Maintain identical lighting conditions from the source image.
+4. **Identical Appearance**: The character's design, colors, and textures must match the source exactly.
+5. **Precise Direction**: The character must face exactly ${direction.toUpperCase()}.
 
 **Summary of Action**:
-- **Input**: Image of a figurine at 0 degrees.
-- **Action**: Rotate ONLY the character model on its base by ${angle} degrees.
-- **Output**: Image from the same fixed camera, showing the rotated character on its unmoving base.
-`;
+- **Input**: Image of a character facing FRONT
+- **Action**: Rotate ONLY the character model on its base to face ${direction.toUpperCase()}
+- **Output**: Image from the same fixed camera, showing the rotated character on its unmoving base`
+    });
 
-    const prompt = [
-      { text: rotationPrompt },
-      {
-        inlineData: {
-          mimeType: "image/png",
-          data: base64Image,
-        },
+    // Add source image to the prompt
+    const imageData = fs.readFileSync(sourceImagePath);
+    const base64Image = imageData.toString("base64");
+    promptParts.push({
+      inlineData: {
+        mimeType: "image/png",
+        data: base64Image,
       },
-    ];
+    });
 
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash-image-preview",
-      contents: prompt,
+      contents: promptParts,
+      generationConfig: {
+        temperature: 0.1,
+        topP: 0.95,
+        topK: 40,
+      },
     });
 
     // Save the generated image
@@ -82,58 +85,8 @@ Using the provided image as the master reference for the character's appearance,
     console.log(`⚠ No image data received for ${outputPath}`);
     
   } catch (error) {
-    console.error(`❌ Error generating ${angle}° view for ${characterName}:`, error.message);
-  }
-}
-
-async function generateFlippedView(ai, sourceImagePath, characterName, angle, description, outputPath) {
-  console.log(`Generating FLIPPED ${angle}° view for ${characterName}...`);
-  try {
-    const flippedImagePath = `public/rotations/${characterName.toLowerCase().replace(/ /g, '-')}/temp_flipped.png`;
-
-    // 1. Flip the 90-degree image horizontally
-    await sharp(sourceImagePath).flop().toFile(flippedImagePath);
-    console.log(`✓ Temporarily flipped image created: ${flippedImagePath}`);
-
-    // 2. Read the new flipped image
-    const imageData = fs.readFileSync(flippedImagePath);
-    const base64Image = imageData.toString("base64");
-
-    // 3. Create a new prompt to "fix" the flipped image
-    const fixPrompt = `
-This is a technical rendering task.
-The provided image is a horizontally flipped, low-quality reference.
-Your task is to re-render the character in this exact right-facing pose, but applying the correct, consistent lighting, textures, and high-quality finish of the original character style.
-
-**Critical Constraints:**
-1.  **Preserve Pose**: The character's right-facing profile pose from the input image is correct and MUST be preserved.
-2.  **Apply Correct Style**: Re-create the image with the high-quality, photorealistic 3D collectible figurine style.
-3.  **Fix Lighting**: The lighting should be soft and even, coming from the front, consistent with the rest of the animation sequence. Do not use the lighting from the flipped input image.
-4.  **Maintain Consistency**: Ensure the character's colors, textures, and the stationary circular base match the original front-facing view.
-
-**Summary of Action**:
-- **Input**: A low-quality, horizontally-flipped image showing the desired pose.
-- **Action**: Re-render the character in this exact pose using the correct, high-quality style and lighting.
-- **Output**: A clean, high-quality image of the character facing right.
-`;
-
-    const prompt = [{ text: fixPrompt }, { inlineData: { mimeType: "image/png", data: base64Image } }];
-
-    const response = await ai.models.generateContent({ model: "gemini-2.5-flash-image-preview", contents: prompt });
-
-    for (const part of response.candidates[0].content.parts) {
-      if (part.inlineData) {
-        const newImageData = part.inlineData.data;
-        const buffer = Buffer.from(newImageData, "base64");
-        fs.writeFileSync(outputPath, buffer);
-        console.log(`✓ Successfully created: ${outputPath}`);
-        // Clean up the temporary flipped image
-        fs.unlinkSync(flippedImagePath);
-        return;
-      }
-    }
-  } catch (error) {
-    console.error(`❌ Error generating flipped ${angle}° view for ${characterName}:`, error.message);
+    console.error(`❌ Error generating ${direction} view for ${characterName}:`, error.message);
+    throw error; // Re-throw to handle quota issues
   }
 }
 
@@ -144,7 +97,7 @@ async function generateAllRotationalViews() {
   
   const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
-  console.log("🎯 Starting 4-view rotation generation for all characters...\n");
+  console.log("🎯 Starting 4-direction rotation generation for all characters...\n");
 
   for (const character of characters) {
     console.log(`\n📸 Processing ${character.displayName}...`);
@@ -158,43 +111,54 @@ async function generateAllRotationalViews() {
     // Source image path (your original front-facing character images)
     const sourceImagePath = `public/${character.name}.png`;
 
-    // Generate all 4 rotational views
-    for (const rotation of rotationAngles) {
-      const outputPath = `${characterDir}/${character.name}_${rotation.angle.toString().padStart(3, '0')}.png`;
-      
-      if (rotation.angle === 270) {
-        // Use the special flipped-image technique for the 270-degree view
-        const ninetyDegreeImagePath = `${characterDir}/${character.name}_090.png`;
-        if (fs.existsSync(ninetyDegreeImagePath)) {
-          await generateFlippedView(ai, ninetyDegreeImagePath, character.displayName, rotation.angle, rotation.description, outputPath);
-        } else {
-          console.error(`Cannot generate 270° view because 90° view is missing: ${ninetyDegreeImagePath}`);
-        }
-      } else {
-        // Use the standard text-to-image generation for 0, 90, and 180 degrees
-        await generateRotationalView(
-          ai, 
-          sourceImagePath, 
-          character.displayName, 
-          rotation.angle, 
-          rotation.description, 
-          outputPath
-        );
-      }
-      
-      // Add a small delay to avoid rate limiting
-      await new Promise(resolve => setTimeout(resolve, 1000));
+    // Check if source image exists
+    if (!fs.existsSync(sourceImagePath)) {
+      console.error(`❌ Source image not found for ${character.displayName}: ${sourceImagePath}`);
+      continue;
     }
-    
-    console.log(`✅ Completed all 4 views for ${character.displayName}`);
+
+    // Generate all views
+    console.log(`\n  -> Generating directional views...`);
+    for (const rotation of rotationDirections) {
+      const outputPath = `${characterDir}/${character.name}_${rotation.direction}.png`;
+
+      if (rotation.method === "copy") {
+        // For the front view, just copy the source image directly
+        console.log(`Copying source for front-facing view for ${character.displayName}...`);
+        fs.copyFileSync(sourceImagePath, outputPath);
+        console.log(`✓ Successfully created: ${outputPath}`);
+      } else {
+        try {
+          await generateRotationalView(
+            ai,
+            sourceImagePath,
+            character.displayName,
+            rotation.direction,
+            rotation.description,
+            outputPath
+          );
+          await new Promise(resolve => setTimeout(resolve, 2000)); // Increased delay to avoid quota issues
+        } catch (error) {
+          if (error.error && error.error.code === 429) {
+            console.error(`❌ Quota exceeded. Please try again later.`);
+            return; // Stop processing if we hit quota limits
+          }
+        }
+      }
+    }
+
+    console.log(`✅ Completed all 4 directions for ${character.displayName}`);
   }
 
-  console.log("\n🎉 All rotational views generated successfully!");
+  console.log("\n🎉 All directional views generated successfully!");
   console.log("\n📁 File structure:");
   console.log("public/rotations/");
   characters.forEach(char => {
     console.log(`  ├── ${char.name}/`);
-    console.log(`  │   ├── ... (4 images: 000, 090, 180, 270)`);
+    console.log(`  │   ├── ${char.name}_front.png (Front)`);
+    console.log(`  │   ├── ${char.name}_left.png (Left)`);
+    console.log(`  │   ├── ${char.name}_back.png (Back)`);
+    console.log(`  │   └── ${char.name}_right.png (Right)`);
   });
 }
 

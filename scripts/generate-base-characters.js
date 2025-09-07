@@ -11,13 +11,13 @@ The background should be a clean, solid light grey (#F5F5F5).
 The lighting should be soft and even, highlighting the character's features.
 `;
 
-const otterPupPrompt = `
+const capybaraScoutPrompt = `
 ${baseStyle}
-Character: A playful river otter pup named 'Banana Splash'.
-Appearance: Sleek, wet fur, wide innocent eyes, and a joyful expression.
-Outfit: Wearing a small, yellow life vest with a banana logo on it.
-Accessories: Juggling a small, perfectly ripe banana while floating on its back.
-Pose: Floating playfully on its back on the circular base, which looks like a gentle water ripple.
+Character: A curious and friendly capybara named 'Banana Scout'.
+Appearance: Calm, friendly expression, with coarse brown fur and sweet, dark eyes.
+Outfit: Wearing a small, khaki-colored scout vest with several pockets. A small, embroidered banana patch is on the vest's chest.
+Accessories: Holding a single, perfectly ripe banana in one paw, as if presenting a discovery. A small pair of detailed, brass binoculars hangs around its neck.
+Pose: Sitting upright and alert on the circular base, looking forward with gentle curiosity, facing directly forward (South view).
 Style: Adorable and energetic, representing youthful curiosity.
 `;
 
@@ -26,8 +26,8 @@ ${baseStyle}
 Character: A shy but curious mole named 'Sprout Mole'.
 Appearance: Soft, dark fur, a cute pink nose, and large paws for digging. A tiny banana leaf is sprouting from the top of its head.
 Outfit: Wearing a little gardener's apron with a pocket holding a seed packet.
-Accessories: Holding a small, freshly picked banana like a prized treasure.
-Pose: Peeking up from the circular base as if just emerging from the ground, holding the banana.
+Accessories: Holding a small, freshly picked banana with a single dewdrop on it, like a prized treasure.
+Pose: Peeking up from the circular base as if just emerging from the ground, holding the banana, facing directly forward (South view).
 Style: Gentle and sweet, representing growth and discovery.
 `;
 
@@ -36,8 +36,8 @@ ${baseStyle}
 Character: A clever fennec fox named 'Desert Dash', a quick-witted student.
 Appearance: Enormous ears, sharp intelligent eyes, and a sandy-colored coat.
 Outfit: Wearing a stylish, open hoodie in banana-yellow, with headphones around its neck.
-Accessories: A messenger bag slung over its shoulder, with scrolls of ancient maps peeking out. A banana-shaped charm hangs from the bag's zipper.
-Pose: Standing with a confident, ready-for-anything stance on the circular base, one paw on its messenger bag.
+Accessories: A leather messenger bag slung over its shoulder, with scrolls of ancient maps peeking out. A banana-shaped charm hangs from the bag's zipper.
+Pose: Standing with a confident, ready-for-anything stance on the circular base, one paw on its messenger bag, facing directly forward (South view).
 Style: Quick, smart, and trendy, representing a sharp and resourceful mind.
 `;
 
@@ -46,8 +46,8 @@ ${baseStyle}
 Character: A chill and friendly red panda named 'Bamboo Breeze', a social butterfly.
 Appearance: Fluffy striped tail, a sweet, content face with white facial markings.
 Outfit: Wearing a comfortable, loose-fitting t-shirt with a banana print pattern.
-Accessories: Holding a large boba tea with a banana flavor, and wearing a friendship bracelet made of woven leaves.
-Pose: Sitting relaxed on the circular base, enjoying its boba tea with a happy expression.
+Accessories: Holding a large boba tea with a banana flavor and black tapioca pearls, and wearing a friendship bracelet made of woven leaves.
+Pose: Sitting relaxed on the circular base, enjoying its boba tea with a happy expression, facing directly forward (South view).
 Style: Laid-back and friendly, representing social connection and enjoying the moment.
 `;
 
@@ -56,8 +56,8 @@ ${baseStyle}
 Character: A clever and friendly capuchin monkey named 'Code Monkey', a tech guru.
 Appearance: Bright, intelligent eyes, wearing stylish glasses perched on his nose.
 Outfit: A small, open hoodie in banana-yellow over a t-shirt with a "less-than slash greater-than" code symbol on it.
-Accessories: Holding a miniature laptop with a banana sticker on the back, and a utility belt with tiny gadgets.
-Pose: Sitting cross-legged on the circular base, intently typing on his laptop with a focused but happy expression.
+Accessories: Holding a miniature, sleek silver laptop with a banana sticker on the back, and a utility belt with tiny gadgets.
+Pose: Sitting cross-legged on the circular base, intently typing on his laptop with a focused but happy expression, facing directly forward (South view).
 Style: Whimsical and smart, representing a master of technology.
 `;
 
@@ -66,8 +66,8 @@ ${baseStyle}
 Character: A wise and creative snowy owl named 'Artisan Owl', a master of crafts.
 Appearance: Large, perceptive eyes and soft, detailed feathers.
 Outfit: Wearing a leather artist's apron with pockets holding brushes and tools. A small, elegant banana-shaped pendant hangs around her neck.
-Accessories: One wing is holding a paintbrush, the other resting on a small, beautifully carved wooden banana.
-Pose: Standing gracefully on the circular base, looking thoughtfully at her creation.
+Accessories: One wing is holding a fine-tipped paintbrush with blue paint on it, the other resting on a small, beautifully carved wooden banana.
+Pose: Standing gracefully on the circular base, looking thoughtfully at her creation, facing directly forward (South view).
 Style: Elegant and creative, representing artistic mastery.
 `;
 
@@ -76,8 +76,8 @@ ${baseStyle}
 Character: A brave and adventurous canary named 'Captain Canary'.
 Appearance: Bright yellow feathers, a determined look in his eye, and a tiny captain's hat tilted to one side.
 Outfit: A small, custom-fit aviator's jacket in a deep blue, with a banana emblem on the lapel.
-Accessories: Holding a miniature rolled-up treasure map tied with a vine, and a small compass hanging from his belt.
-Pose: Standing proudly on the circular base, one foot forward, as if ready to lead an expedition.
+Accessories: Holding a miniature, weathered, rolled-up treasure map tied with a vine, and a small brass compass hanging from his belt.
+Pose: Standing proudly on the circular base, one foot forward, as if ready to lead an expedition, facing directly forward (South view).
 Style: Daring and charismatic, representing leadership and adventure.
 `;
 
@@ -86,8 +86,8 @@ ${baseStyle}
 Character: A wise and ancient dragon named 'Banana Sage', the ultimate guardian.
 Appearance: Scales that shimmer like gold, with a crest of horns shaped like a crown of bananas. Its eyes glow with ancient wisdom.
 Outfit: Wears ornate, golden bracers on its front legs, etched with banana-leaf patterns.
-Accessories: A large, glowing banana-shaped crystal floats just in front of its snout. Its long tail is curled around the circular base.
-Pose: Seated in a majestic, dignified pose, looking sagely forward.
+Accessories: A large, glowing, translucent banana-shaped crystal floats just in front of its snout. Its long tail is curled around the circular base.
+Pose: Seated in a majestic, dignified pose, looking sagely forward, facing directly forward (South view).
 Style: Epic and legendary, representing the pinnacle of wisdom and power.
 `;
 
@@ -116,7 +116,7 @@ async function main() {
   const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
   // Generate all character images
-  await generateImage(ai, otterPupPrompt, "public/banana-splash.png");
+  await generateImage(ai, capybaraScoutPrompt, "public/banana-scout.png");
   await generateImage(ai, sproutMolePrompt, "public/sprout-mole.png");
   await generateImage(ai, fennecFoxPrompt, "public/desert-dash.png");
   await generateImage(ai, redPandaPrompt, "public/bamboo-breeze.png");

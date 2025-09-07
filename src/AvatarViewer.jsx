@@ -7,10 +7,9 @@ const ROTATION_ANGLES = [0, 90, 180, 270];
 const AvatarViewer = ({ character, onBack }) => {
   const [rotationIndex, setRotationIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
-  const [isAutoRotating, setIsAutoRotating] = useState(true);
   const [isDragging, setIsDragging] = useState(false);
   const dragStartX = useRef(0);
-  const currentRotationIndex = useRef(0);
+  const dragStartRotationIndex = useRef(0);
 
   const getImagePath = (index) => {
     const angle = ROTATION_ANGLES[index].toString().padStart(3, '0');
@@ -19,9 +18,7 @@ const AvatarViewer = ({ character, onBack }) => {
 
   useEffect(() => {
     setIsLoading(true);
-    const imageUrls = ROTATION_ANGLES.map((_, index) => getImagePath(index));
-    // Reset auto-rotation when a new character is selected
-    setIsAutoRotating(true); 
+    const imageUrls = Array.from({ length: TOTAL_VIEWS }, (_, i) => getImagePath(i));
     let loadedImages = 0;
 
     const handleImageLoad = () => {
@@ -41,24 +38,10 @@ const AvatarViewer = ({ character, onBack }) => {
   }, [character]);
 
   useEffect(() => {
-    if (isAutoRotating && !isLoading) {
-      const interval = setInterval(() => {
-        setRotationIndex((prev) => (prev + 1) % TOTAL_VIEWS);
-      }, 800); // Rotate every 800ms
-
-      return () => clearInterval(interval);
-    }
-  }, [isAutoRotating, isLoading]);
-
-  useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'ArrowLeft') {
-        // Stop auto-rotation on manual interaction
-        setIsAutoRotating(false);
         setRotationIndex((prev) => (prev - 1 + TOTAL_VIEWS) % TOTAL_VIEWS);
       } else if (e.key === 'ArrowRight') {
-        // Stop auto-rotation on manual interaction
-        setIsAutoRotating(false);
         setRotationIndex((prev) => (prev + 1) % TOTAL_VIEWS);
       }
     };
@@ -68,28 +51,23 @@ const AvatarViewer = ({ character, onBack }) => {
   }, [TOTAL_VIEWS]); // Re-bind if TOTAL_VIEWS changes, ensuring fresh scope.
 
   const handleMouseDown = (e) => {
-    // Stop auto-rotation on manual interaction
-    setIsAutoRotating(false);
     setIsDragging(true);
     dragStartX.current = e.clientX;
-    currentRotationIndex.current = rotationIndex;
+    dragStartRotationIndex.current = rotationIndex;
   };
 
   const handleMouseMove = (e) => {
     if (!isDragging) return;
     const dragDistance = e.clientX - dragStartX.current;
-    // Adjust sensitivity by changing the divisor
-    const rotationChange = Math.round(dragDistance / 50); // Less sensitive for fewer frames
-    const newIndex = (currentRotationIndex.current - rotationChange + TOTAL_VIEWS) % TOTAL_VIEWS;
+    // A sensitivity of 20 means you have to drag 20px to change one frame.
+    const sensitivity = 20;
+    const rotationChange = Math.round(dragDistance / sensitivity);
+    const newIndex = (dragStartRotationIndex.current - rotationChange + (TOTAL_VIEWS * 100)) % TOTAL_VIEWS; // Add a large multiple of TOTAL_VIEWS to handle negative results
     setRotationIndex(newIndex);
   };
 
   const handleMouseUp = () => {
     setIsDragging(false);
-  };
-
-  const toggleAutoRotate = () => {
-    setIsAutoRotating(!isAutoRotating);
   };
 
   return (
@@ -112,12 +90,7 @@ const AvatarViewer = ({ character, onBack }) => {
           onMouseLeave={handleMouseUp} // Stop dragging if mouse leaves the area
         >
           <img src={getImagePath(rotationIndex)} alt={`${character.name} rotated`} />
-          <div className="controls-container">
-            <button onClick={toggleAutoRotate} className="control-button">
-              {isAutoRotating ? '❚❚ Pause' : '► Play'}
-            </button>
-            <p className="instructions">Click and drag, or use ← → arrow keys to rotate.</p>
-          </div>
+          <p className="instructions">Click and drag, or use ← → arrow keys to rotate.</p>
         </div>
       )}
     </div>

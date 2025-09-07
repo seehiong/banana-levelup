@@ -45,31 +45,9 @@
 }
 
 .instructions {
-  margin-top: 1rem;
+  margin-top: 1.5rem;
   color: #666;
   font-style: italic;
-}
-.controls-container {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 1rem;
-  margin-top: 1rem;
-}
-
-.control-button {
-  padding: 8px 16px;
-  font-size: 1rem;
-  cursor: pointer;
-  background-color: #fff;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  transition: background-color 0.2s;
-  min-width: 100px;
-}
-
-.control-button:hover {
-  background-color: #f0f0f0;
 }
 
 .loading-indicator {

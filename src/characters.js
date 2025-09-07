@@ -1,9 +1,9 @@
 export const characters = [
   {
-    id: "banana-splash",
-    name: "Banana Splash",
-    description: "A playful otter pup in a life vest, joyfully juggling a banana while floating.",
-    baseImage: "/banana-splash.png",
+    id: "banana-scout",
+    name: "Banana Scout",
+    description: "A curious and friendly capybara in a scout vest, holding a banana like a new discovery.",
+    baseImage: "/banana-scout.png",
   },
   {
     id: "sprout-mole",

@@ -20,7 +20,7 @@ The project demonstrates natural language photo editing, automated creative work
 
 - **Starter Avatars**: Choose from a selection of base characters created as high-quality, photorealistic 3D collectible figurines:
   - **Banana Splash** (Playful Otter Pup)
-  - **Sprout Mole** (Curious Gardener)
+  - **Banana Scout** (Curious Capybara)
   - **Desert Dash** (Clever Fennec Fox)
   - **Bamboo Breeze** (Chill Red Panda)
   - **Code Monkey** (Tech Guru)
@@ -35,8 +35,8 @@ The project demonstrates natural language photo editing, automated creative work
 
 Each character reflects a specific age and user demographic with consistent artistic style and photorealistic 3D collectible figurine quality. The banana theme evolves from playful patches to sophisticated accessories, showing character progression.
 
-#### Banana Splash (Otter Pup)
-A playful otter pup in a life vest, joyfully juggling a banana while floating. Represents youthful curiosity.
+#### Banana Scout (Capybara)
+A curious and friendly capybara in a scout vest, holding a banana like a new discovery. Represents youthful curiosity and exploration.
 
 #### Sprout Mole (Gardener)
 A shy mole with a banana leaf sprouting from its head, holding a prized banana. Represents growth and discovery.
@@ -88,19 +88,21 @@ A wise, ancient golden dragon with banana-shaped horns, guarding a mystical bana
 
 3.  **Install dependencies and generate base characters:**
     Run the combined setup script. This will install all `npm` packages and then run the script to generate the initial character images.
+    The base images are required before you can generate rotations.
     ```bash
-    npm run setup
+    # Installs dependencies AND generates base character images
+    npm run setup 
     ```
-    This script uses detailed natural language prompts to create high-quality collectible figurines for each character archetype. The images are saved in the `public/` directory for use in the application.
+    The images are saved in the `public/` directory.
 
 4.  **Run the development server:**
     ```bash
     npm run dev
     ```
-    The application will be available at `http://localhost:5173` (or another port if 5173 is in use).
+    The application will be available at `http://localhost:5173`.
 
 5.  **(Optional) Generate Character Rotations:**
-    To generate the 360° rotational views for the characters, run the `setup-rotations` script.
+    To generate the 360° rotational views for the characters, run the `setup-rotations` script. **Note:** You must generate the base characters first (see step 3).
     ```bash
     # Generate rotations for ALL characters
     npm run setup-rotations
@@ -113,6 +115,6 @@ A wise, ancient golden dragon with banana-shaped horns, guarding a mystical bana
 - `npm run dev`: Starts the Vite development server.
 - `npm run build`: Builds the application for production.
 - `npm run preview`: Serves the production build locally.
-- `npm run setup-basechar`: Only generates the base character images.
 - `npm run setup`: Installs dependencies and generates base character images.
+- `npm run setup-basechar`: Generates only the base character images (useful if you've already installed dependencies).
 - `npm run setup-rotations`: Generates 360° rotational views for characters.
