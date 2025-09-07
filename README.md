@@ -67,7 +67,7 @@ A wise, ancient golden dragon with banana-shaped horns, guarding a mystical bana
 
 1.  **Clone the repository:**
     ```bash
-    git clone https://github.com/your-username/banana-levelup.git
+    git clone https://github.com/seehiong/banana-levelup.git
     cd banana-level-up
     ```
 
@@ -109,3 +109,7 @@ A wise, ancient golden dragon with banana-shaped horns, guarding a mystical bana
 - `npm run setup`: Installs dependencies and generates base character images.
 - `npm run setup-basechar`: Generates only the base character images (useful if you've already installed dependencies).
 - `npm run setup-rotations`: Generates 360° rotational views for characters.
+
+## 📜 License
+
+This project is licensed under the MIT License. See the LICENSE file for details.
