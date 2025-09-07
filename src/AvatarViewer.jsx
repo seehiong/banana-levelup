@@ -23,15 +23,26 @@ const AvatarViewer = ({ character, onBack }) => {
   const [rotationIndex, setRotationIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [isDragging, setIsDragging] = useState(false);
-  const [showAll8, setShowAll8] = useState(false); // Default to 4 images
+  const [showAll8, setShowAll8] = useState(false);
   const [jpegAvailable, setJpegAvailable] = useState(false);
   const [checkingJpeg, setCheckingJpeg] = useState(true);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const dragStartX = useRef(0);
   const dragStartRotationIndex = useRef(0);
   const avatarDisplayRef = useRef(null);
 
   const currentViews = showAll8 ? ALL_VIEWS : PNG_VIEWS;
   const totalViews = currentViews.length;
+
+  // Check if mobile on resize
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const getImagePath = (index) => {
     const view = currentViews[index];
@@ -50,7 +61,7 @@ const AvatarViewer = ({ character, onBack }) => {
 
     const checkComplete = () => {
       if (loadedJpegs + failedJpegs === jpegViews.length) {
-        setJpegAvailable(loadedJpegs > 0); // Available if at least one JPEG loaded
+        setJpegAvailable(loadedJpegs > 0);
         setCheckingJpeg(false);
       }
     };
@@ -118,19 +129,16 @@ const AvatarViewer = ({ character, onBack }) => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [totalViews]);
 
-  // Effect for handling the wheel event with an active listener
+  // Effect for handling the wheel event
   useEffect(() => {
     const element = avatarDisplayRef.current;
     if (!element) return;
 
-    // The { passive: false } option is crucial to allow preventDefault()
     element.addEventListener('wheel', handleWheel, { passive: false });
-
     return () => {
       element.removeEventListener('wheel', handleWheel);
     };
-  }, [isLoading]); // Re-attach if the element is re-rendered (e.g., after loading)
-
+  }, [isLoading]);
 
   const handleMouseDown = (e) => {
     setIsDragging(true);
@@ -152,12 +160,10 @@ const AvatarViewer = ({ character, onBack }) => {
   };
 
   const handleWheel = (e) => {
-    e.preventDefault(); // Prevent the page from scrolling
+    e.preventDefault();
     if (e.deltaY < 0) {
-      // Scroll up
       setRotationIndex((prev) => (prev - 1 + totalViews) % totalViews);
     } else {
-      // Scroll down
       setRotationIndex((prev) => (prev + 1) % totalViews);
     }
   };
@@ -166,6 +172,10 @@ const AvatarViewer = ({ character, onBack }) => {
     if (jpegAvailable) {
       setShowAll8(!showAll8);
     }
+  };
+
+  const handleThumbnailClick = (index) => {
+    setRotationIndex(index);
   };
 
   return (
@@ -194,23 +204,43 @@ const AvatarViewer = ({ character, onBack }) => {
           <p>Polishing the figurine...</p>
         </div>
       ) : (
-        <div 
-          className="avatar-display"
-          ref={avatarDisplayRef}
-          onMouseDown={handleMouseDown}
-          onMouseMove={isDragging ? handleMouseMove : null}
-          onMouseLeave={handleMouseUp} // Stop dragging if mouse leaves the image area
-          onMouseUp={handleMouseUp}
-        >
-          <img 
-            src={getImagePath(rotationIndex)} 
-            alt={`Missing: ${getImagePath(rotationIndex)}`} 
-          />
-          <p className="instructions">
-            Scroll, click & drag, or use ← → arrow keys to rotate. 
-            {showAll8 ? ' (8 views)' : ' (4 views)'}
-          </p>
-        </div>
+        <>
+          <div 
+            className="avatar-display"
+            ref={avatarDisplayRef}
+            onMouseDown={!isMobile ? handleMouseDown : null}
+            onMouseMove={!isMobile && isDragging ? handleMouseMove : null}
+            onMouseLeave={!isMobile ? handleMouseUp : null}
+            onMouseUp={!isMobile ? handleMouseUp : null}
+          >
+            <img 
+              src={getImagePath(rotationIndex)} 
+              alt={`${character.name} - ${currentViews[rotationIndex].name} view`} 
+            />
+            <p className="instructions">
+              {!isMobile ? "Scroll, click & drag, or use ← → arrow keys to rotate." : "Swipe or tap thumbnails to rotate."}
+              {showAll8 ? ' (8 views)' : ' (4 views)'}
+            </p>
+          </div>
+
+          {/* Thumbnail grid for mobile */}
+          {isMobile && (
+            <div className="thumbnails-grid">
+              {currentViews.map((view, index) => (
+                <div 
+                  key={index}
+                  className={`thumbnail ${index === rotationIndex ? 'active' : ''}`}
+                  onClick={() => handleThumbnailClick(index)}
+                >
+                  <img 
+                    src={getImagePath(index)} 
+                    alt={`${view.name} view`}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+        </>
       )}
     </div>
   );

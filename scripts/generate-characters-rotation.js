@@ -16,10 +16,10 @@ const characters = [
 
 // Rotation directions - source image is front-facing
 const rotationDirections = [
-  { direction: "front", description: "front-facing view", method: "copy" },
-  { direction: "left", description: "left-facing view", method: "generate" },
-  { direction: "back", description: "back-facing view", method: "generate" },
-  { direction: "right", description: "right-facing view", method: "generate" },
+  { direction: "front", method: "copy" },
+  { direction: "left", method: "generate" },
+  { direction: "back", method: "generate" },
+  { direction: "right", method: "generate" },
 ];
 
 async function generateRotationalView(ai, sourceImagePath, characterName, direction, description, outputPath) {
