@@ -45,8 +45,14 @@
   transition: background-color 0.2s;
 }
 
-.toggle-button:hover {
+.toggle-button:hover:not(.disabled) {
   background-color: #0056b3;
+}
+
+.toggle-button.disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
 .view-counter {

@@ -24,6 +24,8 @@ const AvatarViewer = ({ character, onBack }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isDragging, setIsDragging] = useState(false);
   const [showAll8, setShowAll8] = useState(false); // Default to 4 images
+  const [jpegAvailable, setJpegAvailable] = useState(false);
+  const [checkingJpeg, setCheckingJpeg] = useState(true);
   const dragStartX = useRef(0);
   const dragStartRotationIndex = useRef(0);
 
@@ -35,6 +37,37 @@ const AvatarViewer = ({ character, onBack }) => {
     if (!character || !view) return '';
     return `/rotations/${character.id}/${character.id}_${view.name}.${view.ext}`;
   };
+
+  // Check JPEG availability
+  useEffect(() => {
+    if (!character) return;
+    
+    setCheckingJpeg(true);
+    const jpegViews = ALL_VIEWS.filter(view => view.ext === 'jpeg');
+    let loadedJpegs = 0;
+    let failedJpegs = 0;
+
+    const checkComplete = () => {
+      if (loadedJpegs + failedJpegs === jpegViews.length) {
+        setJpegAvailable(loadedJpegs > 0); // Available if at least one JPEG loaded
+        setCheckingJpeg(false);
+      }
+    };
+
+    jpegViews.forEach((view) => {
+      const img = new Image();
+      const url = `/rotations/${character.id}/${character.id}_${view.name}.${view.ext}`;
+      img.src = url;
+      img.onload = () => {
+        loadedJpegs++;
+        checkComplete();
+      };
+      img.onerror = () => {
+        failedJpegs++;
+        checkComplete();
+      };
+    });
+  }, [character]);
 
   useEffect(() => {
     setIsLoading(true);
@@ -58,6 +91,13 @@ const AvatarViewer = ({ character, onBack }) => {
       };
     });
   }, [character, showAll8, totalViews]);
+
+  // Reset showAll8 if JPEG becomes unavailable
+  useEffect(() => {
+    if (!jpegAvailable && showAll8) {
+      setShowAll8(false);
+    }
+  }, [jpegAvailable, showAll8]);
 
   // Reset rotation index when switching between modes
   useEffect(() => {
@@ -97,7 +137,9 @@ const AvatarViewer = ({ character, onBack }) => {
   };
 
   const toggleViewMode = () => {
-    setShowAll8(!showAll8);
+    if (jpegAvailable) {
+      setShowAll8(!showAll8);
+    }
   };
 
   return (
@@ -105,8 +147,13 @@ const AvatarViewer = ({ character, onBack }) => {
       <button onClick={onBack} className="back-button">← Back to Selection</button>
       
       <div className="view-toggle">
-        <button onClick={toggleViewMode} className="toggle-button">
-          {showAll8 ? 'Show 4 Views' : 'Show 8 Views'}
+        <button 
+          onClick={toggleViewMode} 
+          className={`toggle-button ${!jpegAvailable ? 'disabled' : ''}`}
+          disabled={!jpegAvailable}
+          title={!jpegAvailable ? 'JPEG images not available for this character' : ''}
+        >
+          {checkingJpeg ? 'Checking...' : (showAll8 ? 'Show 4 Views' : 'Show 8 Views')}
         </button>
         <span className="view-counter">{rotationIndex + 1} / {totalViews}</span>
       </div>
