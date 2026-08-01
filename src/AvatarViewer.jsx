@@ -277,22 +277,36 @@ const AvatarViewer = ({ character, onBack, onUpdateCharacter }) => {
       if (!key) throw new Error("Google API Key not found.");
       const ai = new GoogleGenAI({ apiKey: key });
       const response = await ai.models.generateContent({ model, contents: prompt });
-      const part = response.candidates[0].content.parts[0];
-      if (!part.inlineData) throw new Error("No image data returned from Google API.");
+      if (response?.promptFeedback?.blockReason) {
+        throw new Error(`Blocked by safety filters (${response.promptFeedback.blockReason}).`);
+      }
+      const part = response?.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
+      if (!part) throw new Error("No image data returned from Google API.");
       return `data:${part.inlineData.mimeType || 'image/jpeg'};base64,${part.inlineData.data}`;
     } else {
       const key = localStorage.getItem('openrouter_api_key');
-      const model = localStorage.getItem('ai_image_model') || 'black-forest-labs/flux-schnell';
+      const model = localStorage.getItem('ai_image_model') || 'google/gemini-3.1-flash-image';
       if (!key) throw new Error("OpenRouter API Key not found.");
       const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
         headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ model, messages: [{ role: "user", content: prompt }] })
+        body: JSON.stringify({
+          model,
+          messages: [{ role: "user", content: prompt }],
+          modalities: ["image", "text"]
+        })
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error?.message || "OpenRouter request failed.");
-      const match = data.choices[0].message.content.match(/(https?:\/\/[^\s\)]+)/);
-      if (!match) throw new Error("No URL found in OpenRouter response.");
+
+      const message = data?.choices?.[0]?.message;
+      const inlineImage = message?.images?.[0]?.image_url?.url || message?.images?.[0]?.url;
+      if (inlineImage) return inlineImage;
+
+      const match = typeof message?.content === 'string'
+        ? message.content.match(/(https?:\/\/[^\s)]+\.(?:png|jpe?g|webp)[^\s)]*)/i)
+        : null;
+      if (!match) throw new Error("That model didn't return an image — pick an image model in the AI Assistant settings.");
       return match[0];
     }
   };

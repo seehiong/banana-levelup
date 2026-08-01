@@ -70,7 +70,7 @@ Keep your answers concise, friendly, and focused on the characters. Do not make 
     const savedOpenRouterKey = localStorage.getItem('openrouter_api_key');
     const savedProvider = localStorage.getItem('ai_provider') || 'google';
     const savedChatModel = localStorage.getItem('ai_chat_model') || (savedProvider === 'google' ? 'gemini-2.5-flash' : 'google/gemini-2.5-flash');
-    const savedImageModel = localStorage.getItem('ai_image_model') || (savedProvider === 'google' ? 'gemini-3.1-flash-image' : 'black-forest-labs/flux-schnell');
+    const savedImageModel = localStorage.getItem('ai_image_model') || (savedProvider === 'google' ? 'gemini-3.1-flash-image' : 'google/gemini-3.1-flash-image');
     
     if (savedGoogleKey) setGoogleKey(savedGoogleKey);
     if (savedOpenRouterKey) setOpenRouterKey(savedOpenRouterKey);
@@ -116,7 +116,7 @@ Keep your answers concise, friendly, and focused on the characters. Do not make 
     setProvider(newProvider);
     if (newProvider === 'openrouter') {
       setChatModel('google/gemini-2.5-flash');
-      setImageModel('black-forest-labs/flux-schnell');
+      setImageModel('google/gemini-3.1-flash-image');
     } else {
       setChatModel('gemini-2.5-flash');
       setImageModel('gemini-3.1-flash-image');
@@ -174,7 +174,8 @@ Keep your answers concise, friendly, and focused on the characters. Do not make 
     const isQuota = status === 429 || status === 'RESOURCE_EXHAUSTED' || /quota|rate.?limit|exceeded/i.test(detail);
     const isAuth = status === 401 || status === 403 || status === 'PERMISSION_DENIED' ||
       status === 'UNAUTHENTICATED' || /api key|unauthorized|permission denied|invalid.*credential/i.test(detail);
-    const isBadModel = status === 404 || status === 'NOT_FOUND' || /not found|does not exist|unsupported model/i.test(detail);
+    const isBadModel = status === 404 || status === 'NOT_FOUND' ||
+      /not found|does not exist|unsupported model|not a valid model|invalid model/i.test(detail);
     const isSafety = status === 'INVALID_ARGUMENT' && /safety|blocked/i.test(detail) || /safety|blocked by/i.test(detail);
     const isOffline = typeof navigator !== 'undefined' && navigator.onLine === false;
     const isNetwork = !isOffline && (error instanceof TypeError || /failed to fetch|networkerror/i.test(raw));
@@ -221,24 +222,31 @@ Keep your answers concise, friendly, and focused on the characters. Do not make 
       },
       body: JSON.stringify({
         model: imageModel,
-        messages: [{ role: "user", content: prompt }]
+        messages: [{ role: "user", content: prompt }],
+        // Required for OpenRouter to return generated images rather than text.
+        modalities: ["image", "text"]
       })
     });
-    
+
     const data = await response.json();
     if (!response.ok) throw new Error(data.error?.message || "OpenRouter Image API failed.");
-    
-    const content = data?.choices?.[0]?.message?.content;
-    if (!content) {
-      throw new Error("The image model returned an empty response. Try a different model in Settings.");
-    }
-    const urlMatch = content.match(/(https?:\/\/[^\s\)]+)/);
 
-    if (!urlMatch) {
-      throw new Error("That model didn't return an image — it may be a text-only model. Pick an image model in ⚙️ Settings.");
+    const message = data?.choices?.[0]?.message;
+    if (!message) {
+      throw new Error("The image model returned an empty response. Try a different model in ⚙️ Settings.");
     }
-    
-    return urlMatch[0]; // Image URL
+
+    // OpenRouter returns generated images on message.images[] as data URLs.
+    const inlineImage = message.images?.[0]?.image_url?.url || message.images?.[0]?.url;
+    if (inlineImage) return inlineImage;
+
+    // Some models instead link the image from the text body.
+    const urlMatch = typeof message.content === 'string'
+      ? message.content.match(/(https?:\/\/[^\s)]+\.(?:png|jpe?g|webp)[^\s)]*)/i)
+      : null;
+    if (urlMatch) return urlMatch[0];
+
+    throw new Error("That model didn't return an image — it may be text-only. Pick an image model such as `google/gemini-3.1-flash-image` in ⚙️ Settings.");
   };
 
   const chatOpenRouter = async (userMessage) => {
@@ -411,7 +419,7 @@ Keep your answers concise, friendly, and focused on the characters. Do not make 
                   type="text" 
                   value={chatModel} 
                   onChange={(e) => setChatModel(e.target.value)}
-                  placeholder="e.g. gemini-2.5-flash"
+                  placeholder={provider === 'google' ? "e.g. gemini-2.5-flash" : "e.g. google/gemini-2.5-flash"}
                 />
               </label>
 
@@ -421,7 +429,7 @@ Keep your answers concise, friendly, and focused on the characters. Do not make 
                   type="text" 
                   value={imageModel} 
                   onChange={(e) => setImageModel(e.target.value)}
-                  placeholder="e.g. gemini-3.1-flash-image"
+                  placeholder={provider === 'google' ? "e.g. gemini-3.1-flash-image" : "e.g. google/gemini-3.1-flash-image"}
                 />
               </label>
 
