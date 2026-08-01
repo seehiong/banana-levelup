@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { GoogleGenAI } from '@google/genai';
 import gifshot from 'gifshot';
 import './AvatarViewer.css';
+import { describeError } from './errors';
 
 const ALL_VIEWS = [
   { name: 'front', ext: 'png' },
@@ -35,6 +36,7 @@ const AvatarViewer = ({ character, onBack, onUpdateCharacter }) => {
   // New States for AI generation
   const [isGeneratingRotations, setIsGeneratingRotations] = useState(false);
   const [isGeneratingGif, setIsGeneratingGif] = useState(false);
+  const [actionError, setActionError] = useState(null);
 
   const dragStartX = useRef(0);
   const dragStartRotationIndex = useRef(0);
@@ -313,6 +315,7 @@ const AvatarViewer = ({ character, onBack, onUpdateCharacter }) => {
 
   const generateRotations = async () => {
     setIsGeneratingRotations(true);
+    setActionError(null);
     try {
       const provider = localStorage.getItem('ai_provider') || 'google';
       const basePrompt = character.description;
@@ -332,7 +335,8 @@ const AvatarViewer = ({ character, onBack, onUpdateCharacter }) => {
       }
     } catch (err) {
       console.error(err);
-      alert("Failed to generate rotations: " + err.message);
+      const model = localStorage.getItem('ai_image_model') || '';
+      setActionError(describeError(err, model));
     } finally {
       setIsGeneratingRotations(false);
     }
@@ -356,7 +360,7 @@ const AvatarViewer = ({ character, onBack, onUpdateCharacter }) => {
         link.click();
         document.body.removeChild(link);
       } else {
-        alert("Failed to generate GIF.");
+        setActionError("😵 Couldn't build the GIF from these views. Try regenerating the rotations first.");
       }
     });
   };
@@ -429,6 +433,15 @@ const AvatarViewer = ({ character, onBack, onUpdateCharacter }) => {
               {isGeneratingGif ? 'Encoding GIF...' : '📥 Download Animated GIF'}
             </button>
           )}
+        </div>
+      )}
+
+      {actionError && (
+        <div className="action-error" role="alert">
+          {actionError.split('\n').filter(Boolean).map((line, i) => (
+            <p key={i}>{line.replace(/\*\*/g, '')}</p>
+          ))}
+          <button className="action-error-dismiss" onClick={() => setActionError(null)}>Dismiss</button>
         </div>
       )}
 
