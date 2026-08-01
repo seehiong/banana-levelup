@@ -1,4 +1,8 @@
+// src/AvatarViewer.jsx
+
 import React, { useState, useEffect, useRef } from 'react';
+import { GoogleGenAI } from '@google/genai';
+import gifshot from 'gifshot';
 import './AvatarViewer.css';
 
 const ALL_VIEWS = [
@@ -19,7 +23,7 @@ const PNG_VIEWS = [
   { name: 'left', ext: 'png' },
 ];
 
-const AvatarViewer = ({ character, onBack }) => {
+const AvatarViewer = ({ character, onBack, onUpdateCharacter }) => {
   const [rotationIndex, setRotationIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [isDragging, setIsDragging] = useState(false);
@@ -27,32 +31,43 @@ const AvatarViewer = ({ character, onBack }) => {
   const [jpegAvailable, setJpegAvailable] = useState(false);
   const [checkingJpeg, setCheckingJpeg] = useState(true);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  
+  // New States for AI generation
+  const [isGeneratingRotations, setIsGeneratingRotations] = useState(false);
+  const [isGeneratingGif, setIsGeneratingGif] = useState(false);
+
   const dragStartX = useRef(0);
   const dragStartRotationIndex = useRef(0);
+  const touchStartX = useRef(0);
   const avatarDisplayRef = useRef(null);
 
+  const customHasViews = character?.isCustom && character?.views && character.views.length === 4;
   const currentViews = showAll8 ? ALL_VIEWS : PNG_VIEWS;
-  const totalViews = currentViews.length;
+  const totalViews = character?.isCustom ? (customHasViews ? 4 : 1) : currentViews.length;
 
   // Check if mobile on resize
   useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.innerWidth <= 768);
     };
-
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   const getImagePath = (index) => {
+    if (!character) return '';
+    if (character.isCustom) {
+      if (customHasViews) return character.views[index];
+      return character.baseImage;
+    }
     const view = currentViews[index];
-    if (!character || !view) return '';
-    return `/rotations/${character.id}/${character.id}_${view.name}.${view.ext}`;
+    if (!view) return '';
+    return `${import.meta.env.BASE_URL}rotations/${character.id}/${character.id}_${view.name}.${view.ext}`;
   };
 
   // Check JPEG availability
   useEffect(() => {
-    if (!character) return;
+    if (!character || character.isCustom) return;
     
     setCheckingJpeg(true);
     const jpegViews = ALL_VIEWS.filter(view => view.ext === 'jpeg');
@@ -68,7 +83,7 @@ const AvatarViewer = ({ character, onBack }) => {
 
     jpegViews.forEach((view) => {
       const img = new Image();
-      const url = `/rotations/${character.id}/${character.id}_${view.name}.${view.ext}`;
+      const url = `${import.meta.env.BASE_URL}rotations/${character.id}/${character.id}_${view.name}.${view.ext}`;
       img.src = url;
       img.onload = () => {
         loadedJpegs++;
@@ -83,14 +98,29 @@ const AvatarViewer = ({ character, onBack }) => {
 
   useEffect(() => {
     setIsLoading(true);
+    if (character?.isCustom) {
+      if (customHasViews) {
+        let loaded = 0;
+        character.views.forEach(src => {
+          const img = new Image();
+          img.src = src;
+          img.onload = () => { loaded++; if (loaded === 4) setIsLoading(false); };
+          img.onerror = () => { loaded++; if (loaded === 4) setIsLoading(false); };
+        });
+      } else {
+        const img = new Image();
+        img.src = character.baseImage;
+        img.onload = () => setIsLoading(false);
+        img.onerror = () => setIsLoading(false);
+      }
+      return;
+    }
+
     const imageUrls = Array.from({ length: totalViews }, (_, i) => getImagePath(i));
     let loadedImages = 0;
-
     const handleImageLoad = () => {
       loadedImages++;
-      if (loadedImages === totalViews) {
-        setIsLoading(false);
-      }
+      if (loadedImages === totalViews) setIsLoading(false);
     };
 
     imageUrls.forEach((url) => {
@@ -102,7 +132,7 @@ const AvatarViewer = ({ character, onBack }) => {
         handleImageLoad();
       };
     });
-  }, [character, showAll8, totalViews]);
+  }, [character, showAll8, totalViews, customHasViews]);
 
   // Reset showAll8 if JPEG becomes unavailable
   useEffect(() => {
@@ -114,10 +144,11 @@ const AvatarViewer = ({ character, onBack }) => {
   // Reset rotation index when switching between modes
   useEffect(() => {
     setRotationIndex(0);
-  }, [showAll8]);
+  }, [showAll8, character]);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
+      if (totalViews <= 1) return;
       if (e.key === 'ArrowLeft') {
         setRotationIndex((prev) => (prev - 1 + totalViews) % totalViews);
       } else if (e.key === 'ArrowRight') {
@@ -132,22 +163,32 @@ const AvatarViewer = ({ character, onBack }) => {
   // Effect for handling the wheel event
   useEffect(() => {
     const element = avatarDisplayRef.current;
-    if (!element) return;
+    if (!element || totalViews <= 1) return;
+
+    const handleWheel = (e) => {
+      e.preventDefault();
+      if (e.deltaY < 0) {
+        setRotationIndex((prev) => (prev - 1 + totalViews) % totalViews);
+      } else {
+        setRotationIndex((prev) => (prev + 1) % totalViews);
+      }
+    };
 
     element.addEventListener('wheel', handleWheel, { passive: false });
     return () => {
       element.removeEventListener('wheel', handleWheel);
     };
-  }, [isLoading]);
+  }, [isLoading, totalViews]);
 
   const handleMouseDown = (e) => {
+    if (totalViews <= 1) return;
     setIsDragging(true);
     dragStartX.current = e.clientX;
     dragStartRotationIndex.current = rotationIndex;
   };
 
   const handleMouseMove = (e) => {
-    if (!isDragging) return;
+    if (!isDragging || totalViews <= 1) return;
     const dragDistance = e.clientX - dragStartX.current;
     const sensitivity = 20;
     const rotationChange = Math.floor(dragDistance / sensitivity);
@@ -159,13 +200,29 @@ const AvatarViewer = ({ character, onBack }) => {
     setIsDragging(false);
   };
 
-  const handleWheel = (e) => {
-    e.preventDefault();
-    if (e.deltaY < 0) {
-      setRotationIndex((prev) => (prev - 1 + totalViews) % totalViews);
-    } else {
-      setRotationIndex((prev) => (prev + 1) % totalViews);
+  // Touch events for mobile
+  const handleTouchStart = (e) => {
+    if (totalViews <= 1) return;
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchMove = (e) => {
+    if (!touchStartX.current || totalViews <= 1) return;
+    const touchX = e.touches[0].clientX;
+    const diffX = touchX - touchStartX.current;
+    
+    if (Math.abs(diffX) > 30) {
+      if (diffX > 0) {
+        setRotationIndex((prev) => (prev - 1 + totalViews) % totalViews);
+      } else {
+        setRotationIndex((prev) => (prev + 1) % totalViews);
+      }
+      touchStartX.current = null;
     }
+  };
+
+  const handleTouchEnd = () => {
+    touchStartX.current = null;
   };
 
   const toggleViewMode = () => {
@@ -178,27 +235,189 @@ const AvatarViewer = ({ character, onBack }) => {
     setRotationIndex(index);
   };
 
+  const handleNext = () => {
+    if (totalViews <= 1) return;
+    setRotationIndex((prev) => (prev + 1) % totalViews);
+  };
+
+  const handlePrevious = () => {
+    if (totalViews <= 1) return;
+    setRotationIndex((prev) => (prev - 1 + totalViews) % totalViews);
+  };
+
+  const downloadCurrentImage = async () => {
+    const url = getImagePath(rotationIndex);
+    if (!url) return;
+    try {
+      let blobUrl = url;
+      if (url.startsWith('http') || url.startsWith('/')) {
+        const response = await fetch(url);
+        const blob = await response.blob();
+        blobUrl = URL.createObjectURL(blob);
+      }
+      const link = document.createElement('a');
+      let ext = 'png';
+      if (url.includes('image/jpeg') || url.endsWith('.jpeg') || url.endsWith('.jpg')) ext = 'jpg';
+      link.download = `${character.name.replace(/\s+/g, '-').toLowerCase()}-view-${rotationIndex + 1}.${ext}`;
+      link.href = blobUrl;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      if (blobUrl !== url) URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      console.error("Failed to download image:", err);
+      window.open(url, '_blank');
+    }
+  };
+
+  const generateSingleView = async (prompt, provider) => {
+    if (provider === 'google') {
+      const key = localStorage.getItem('gemini_api_key');
+      const model = localStorage.getItem('ai_image_model') || 'gemini-3.1-flash-image';
+      if (!key) throw new Error("Google API Key not found.");
+      const ai = new GoogleGenAI({ apiKey: key });
+      const response = await ai.models.generateContent({ model, contents: prompt });
+      const part = response.candidates[0].content.parts[0];
+      if (!part.inlineData) throw new Error("No image data returned from Google API.");
+      return `data:${part.inlineData.mimeType || 'image/jpeg'};base64,${part.inlineData.data}`;
+    } else {
+      const key = localStorage.getItem('openrouter_api_key');
+      const model = localStorage.getItem('ai_image_model') || 'black-forest-labs/flux-schnell';
+      if (!key) throw new Error("OpenRouter API Key not found.");
+      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ model, messages: [{ role: "user", content: prompt }] })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error?.message || "OpenRouter request failed.");
+      const match = data.choices[0].message.content.match(/(https?:\/\/[^\s\)]+)/);
+      if (!match) throw new Error("No URL found in OpenRouter response.");
+      return match[0];
+    }
+  };
+
+  const generateRotations = async () => {
+    setIsGeneratingRotations(true);
+    try {
+      const provider = localStorage.getItem('ai_provider') || 'google';
+      const basePrompt = character.description;
+      
+      // Enhance the prompt to enforce strict stylistic and subject consistency
+      const consistencyPrompt = " Maintain the EXACT same character design, clothing, proportions, lighting, style, and a plain solid background. This is a strict 3D character turnaround sheet view.";
+      
+      const views = [
+        character.baseImage,
+        await generateSingleView(`${basePrompt}, EXACT left profile side view.${consistencyPrompt}`, provider),
+        await generateSingleView(`${basePrompt}, EXACT direct back view, viewed from behind.${consistencyPrompt}`, provider),
+        await generateSingleView(`${basePrompt}, EXACT right profile side view.${consistencyPrompt}`, provider)
+      ];
+      
+      if (onUpdateCharacter) {
+        onUpdateCharacter({ ...character, views });
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Failed to generate rotations: " + err.message);
+    } finally {
+      setIsGeneratingRotations(false);
+    }
+  };
+
+  const generateGif = () => {
+    setIsGeneratingGif(true);
+    gifshot.createGIF({
+      images: character.views,
+      gifWidth: 400,
+      gifHeight: 400,
+      interval: 0.25, // 4 frames per second
+      numFrames: 4,
+    }, function(obj) {
+      setIsGeneratingGif(false);
+      if(!obj.error) {
+        const link = document.createElement('a');
+        link.download = `${character.id}-rotation.gif`;
+        link.href = obj.image;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } else {
+        alert("Failed to generate GIF.");
+      }
+    });
+  };
+
+  const allowRotation = !character.isCustom || customHasViews;
+
   return (
     <div className="avatar-viewer-container">
       <button onClick={onBack} className="back-button">← Back to Selection</button>
       
-      <div className="view-toggle">
-        <button 
-          onClick={toggleViewMode} 
-          className={`toggle-button ${!jpegAvailable ? 'disabled' : ''}`}
-          disabled={!jpegAvailable}
-          title={!jpegAvailable ? 'JPEG images not available for this character' : ''}
-        >
-          {checkingJpeg ? 'Checking...' : (showAll8 ? 'Show 4 Views' : 'Show 8 Views')}
-        </button>
-        <span className="view-counter">{rotationIndex + 1} / {totalViews}</span>
-      </div>
+      {!character.isCustom && (
+        <div className="view-toggle" style={{display: 'flex', alignItems: 'center', gap: '1rem'}}>
+          <button 
+            onClick={toggleViewMode} 
+            className={`toggle-button ${!jpegAvailable ? 'disabled' : ''}`}
+            disabled={!jpegAvailable}
+            title={!jpegAvailable ? 'JPEG images not available for this character' : ''}
+          >
+            {checkingJpeg ? 'Checking...' : (showAll8 ? 'Show 4 Views' : 'Show 8 Views')}
+          </button>
+          <button 
+             onClick={downloadCurrentImage}
+             className="toggle-button"
+             style={{ background: '#3b82f6', color: 'white', border: 'none', marginLeft: 'auto' }}
+          >
+             📥 Download Image
+          </button>
+          <span className="view-counter">{rotationIndex + 1} / {totalViews}</span>
+        </div>
+      )}
+      
+      {character.isCustom && (
+        <div className="view-toggle" style={{display: 'flex', alignItems: 'center', gap: '1rem'}}>
+          <button 
+             onClick={downloadCurrentImage}
+             className="toggle-button"
+             style={{ background: '#3b82f6', color: 'white', border: 'none', marginLeft: 'auto' }}
+          >
+             📥 Download Image
+          </button>
+          {customHasViews && (
+            <span className="view-counter">{rotationIndex + 1} / {totalViews}</span>
+          )}
+        </div>
+      )}
 
       <div className="avatar-info">
         <h1>{character.name}</h1>
         <p>{character.description}</p>
       </div>
       
+      {character.isCustom && (
+        <div className="custom-actions" style={{ margin: '1rem 0', display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+          {!customHasViews ? (
+            <button 
+              className="toggle-button" 
+              onClick={generateRotations} 
+              disabled={isGeneratingRotations}
+              style={{ background: 'linear-gradient(135deg, #10b981, #3b82f6)', color: 'white', border: 'none', padding: '0.75rem 1.5rem', borderRadius: '24px', cursor: 'pointer', fontWeight: 'bold' }}
+            >
+              {isGeneratingRotations ? 'Generating Views (This takes a moment)...' : '✨ Generate 3D Rotations'}
+            </button>
+          ) : (
+            <button 
+              className="toggle-button" 
+              onClick={generateGif} 
+              disabled={isGeneratingGif}
+              style={{ background: 'linear-gradient(135deg, #f59e0b, #ef4444)', color: 'white', border: 'none', padding: '0.75rem 1.5rem', borderRadius: '24px', cursor: 'pointer', fontWeight: 'bold' }}
+            >
+              {isGeneratingGif ? 'Encoding GIF...' : '📥 Download Animated GIF'}
+            </button>
+          )}
+        </div>
+      )}
+
       {isLoading ? (
         <div className="loading-indicator">
           <p>Polishing the figurine...</p>
@@ -208,25 +427,40 @@ const AvatarViewer = ({ character, onBack }) => {
           <div 
             className="avatar-display"
             ref={avatarDisplayRef}
-            onMouseDown={!isMobile ? handleMouseDown : null}
-            onMouseMove={!isMobile && isDragging ? handleMouseMove : null}
-            onMouseLeave={!isMobile ? handleMouseUp : null}
-            onMouseUp={!isMobile ? handleMouseUp : null}
+            onMouseDown={!isMobile && allowRotation ? handleMouseDown : null}
+            onMouseMove={!isMobile && allowRotation && isDragging ? handleMouseMove : null}
+            onMouseLeave={!isMobile && allowRotation ? handleMouseUp : null}
+            onMouseUp={!isMobile && allowRotation ? handleMouseUp : null}
+            onTouchStart={isMobile && allowRotation ? handleTouchStart : null}
+            onTouchMove={isMobile && allowRotation ? handleTouchMove : null}
+            onTouchEnd={isMobile && allowRotation ? handleTouchEnd : null}
+            style={{ cursor: allowRotation ? (isDragging ? 'grabbing' : 'grab') : 'default' }}
           >
             <img 
               src={getImagePath(rotationIndex)} 
-              alt={`${character.name} - ${currentViews[rotationIndex].name} view`} 
+              alt={`${character.name} view`} 
             />
-            <p className="instructions">
-              {!isMobile ? "Scroll, click & drag, or use ← → arrow keys to rotate." : "Swipe or tap thumbnails to rotate."}
-              {showAll8 ? ' (8 views)' : ' (4 views)'}
-            </p>
+            
+            {/* Mobile navigation arrows */}
+            {isMobile && allowRotation && (
+              <div className="mobile-nav">
+                <button className="nav-arrow left-arrow" onClick={handlePrevious}>‹</button>
+                <button className="nav-arrow right-arrow" onClick={handleNext}>›</button>
+              </div>
+            )}
+            
+            {allowRotation && (
+              <p className="instructions">
+                {!isMobile ? "Scroll, click & drag, or use ← → arrow keys to rotate." : "Swipe, tap arrows, or tap thumbnails to rotate."}
+                {!character.isCustom && (showAll8 ? ' (8 views)' : ' (4 views)')}
+              </p>
+            )}
           </div>
 
           {/* Thumbnail grid for mobile */}
-          {isMobile && (
+          {isMobile && allowRotation && (
             <div className="thumbnails-grid">
-              {currentViews.map((view, index) => (
+              {(character.isCustom ? PNG_VIEWS : currentViews).map((view, index) => (
                 <div 
                   key={index}
                   className={`thumbnail ${index === rotationIndex ? 'active' : ''}`}

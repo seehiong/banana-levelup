@@ -1,4 +1,4 @@
-// Base Character Prototype for Banana Level Up Hackathon
+// src/base_character.jsx
 
 class BaseCharacter {
   constructor(name = "Banana Hero", level = 1, experience = 0, health = 100, strength = 10, agility = 10, intelligence = 10) {

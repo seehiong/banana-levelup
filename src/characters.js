@@ -1,3 +1,5 @@
+// src/characters.js
+
 export const characters = [
   {
     id: "banana-scout",

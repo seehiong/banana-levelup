@@ -1,3 +1,5 @@
+/* src/AvatarViewer.css */
+
 .avatar-viewer-container {
   max-width: 100%;
   padding: 1rem;
@@ -65,7 +67,8 @@
 .avatar-display {
   text-align: center;
   margin-bottom: 1.5rem;
-  touch-action: none; /* Prevent browser handling of touch gestures */
+  touch-action: none;
+  position: relative;
 }
 
 .avatar-display img {
@@ -74,6 +77,34 @@
   object-fit: contain;
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Mobile navigation */
+.mobile-nav {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.nav-arrow {
+  background: rgba(0, 0, 0, 0.5);
+  color: white;
+  border: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  font-size: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  pointer-events: auto;
+  margin: 0 10px;
 }
 
 .instructions {
@@ -104,7 +135,8 @@
 
 .thumbnail img {
   width: 100%;
-  height: auto;
+  height: 80px;
+  object-fit: cover;
   display: block;
 }
 
@@ -115,8 +147,9 @@
     margin: 0 auto;
   }
   
-  .thumbnails-grid {
-    display: none; /* Hide thumbnails on desktop */
+  .thumbnails-grid,
+  .mobile-nav {
+    display: none;
   }
 }
 
@@ -153,5 +186,15 @@
   
   .instructions {
     font-size: 0.8rem;
+  }
+  
+  .nav-arrow {
+    width: 35px;
+    height: 35px;
+    font-size: 1.2rem;
+  }
+  
+  .thumbnail img {
+    height: 70px;
   }
 }

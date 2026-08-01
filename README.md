@@ -1,33 +1,40 @@
-# Banana Level Up: Dynamic AI Avatar Creation & Progression
+# Banana Level Up: AI Avatar Creation
 
-Transform user experience with real-time avatar creation, dynamic editing, and visual progression via natural language and multimodal fusion.
+An interactive web demo for AI-powered avatar creation. Pick from a cast of 3D collectible figurine characters, inspect them in a 360° viewer, or generate an entirely new one from a text description.
 
-This project is a submission for the Nano BANANA Hackathon by Google and Kaggle. It is a proof-of-concept web application that showcases the power of Gemini for dynamic, interactive AI-powered avatar creation.
+<!-- ![Banana Hero](banana-levelup-avatar.png) -->
 
-<!-- ![Banana Hero](https://storage.googleapis.com/gemini...) -->
+**Live Demo**: [Play with Banana Level Up on GitHub Pages](https://seehiong.github.io/banana-levelup/)
 
-Banana Level Up is an interactive web demo that unleashes Gemini's strengths for AI-powered avatar creation and progression. Users select a starter avatar, then use natural language to decorate and evolve their character—gaining new visual badges and cosmetic upgrades as milestones are achieved.
+The interesting parts, from an image-generation standpoint:
 
-Every edit is dynamic, blending user input and Gemini’s world knowledge to highlight real-time change. Our application leverages Gemini’s unique capabilities:
-
-- **Consistent Character Rendering**: Maintaining character identity through various progression stages.
-- **Targeted Local Edits**: Allowing for precise personalization of appearance and accessories.
-- **Style Fusion**: Mixing and matching visual styles to create unique avatars.
-
-The project demonstrates natural language photo editing, automated creative workflows, and consistent storytelling, delivering a magical visual experience not possible with simple text-to-image models.
+- **Consistent Character Rendering**: Maintaining a single character identity across multiple viewing angles.
+- **Style Fusion**: Blending a text description with a consistent "3D collectible figurine" art direction, so newly generated avatars fit alongside the existing cast.
+- **Automated Creative Workflows**: Node scripts that generate the full base-character set and their 360° rotations from prompts alone.
 
 ## ✨ Core Features
 
+- **Interactive AI Assistant**: A built-in chat panel that acts as your personal guide to the Banana Level Up world, helping you learn about the characters.
+- **Natural Language Avatar Generation**: Type `/generate <description>` in the chat to create a brand-new avatar from a text prompt — e.g. `/generate a cute cyberpunk cat hacker with neon green glasses holding a banana, rendered as a 3D photorealistic collectible figurine on a white base.`
 - **Character Selection**: Choose from 8 unique base characters, each rendered as a high-quality, photorealistic 3D collectible figurine.
 - **360° Viewer**: Inspect your chosen character from all angles using an interactive viewer. Rotate the model with your mouse (scroll, click-and-drag) or keyboard arrow keys.
 - **Multiple Views**: Toggle between a 4-direction view (PNG) and a smoother 8-direction view (PNG + JPEG) for characters that have the complete image set.
-- **(Future) Natural Language Editing**: The groundwork is laid for using simple text prompts to modify your avatar (e.g., "give him a golden banana sword" or "add a glowing aura").
-- **Visual Progression**: As characters "level up" through interaction, they automatically receive visual upgrades like badges or new armor.
-- **Gemini-Powered**: Every avatar generation and modification is powered by Google's Gemini models.
+- **Bring Your Own Key**: Choose between **Google Gemini** (`@google/genai`) and **OpenRouter** as your provider, with configurable chat and image models. Keys are stored only in your browser's local storage and never leave your machine except to call the provider directly.
+- **Responsive Design**: A grid layout that adapts from mobile to desktop.
+
+### 🚧 Roadmap
+
+These are scaffolded in the codebase but not yet wired into the UI:
+
+- **Targeted Local Edits**: Modify an existing avatar in place (e.g. "give him a golden banana sword", "add a glowing aura").
+- **Visual Progression**: The XP/leveling model in `src/base_character.jsx` exists, but characters do not yet earn visual upgrades like badges or armor.
 
 ## 🐵 Base Character Descriptions
 
 Each character reflects a specific age and user demographic with consistent artistic style and photorealistic 3D collectible figurine quality. The banana theme evolves from playful patches to sophisticated accessories, showing character progression.
+
+#### Banana Scout (Explorer)
+A curious and friendly capybara in a scout vest, holding a banana like a new discovery. Represents curiosity and first steps.
 
 #### Sprout Mole (Gardener)
 A shy mole with a banana leaf sprouting from its head, holding a prized banana. Represents growth and discovery.
@@ -52,64 +59,91 @@ A wise, ancient golden dragon with banana-shaped horns, guarding a mystical bana
 
 ## 🛠️ Tech Stack
 
-- **Frontend**: React with Vite
-- **AI/ML**: Google Gemini API (`@google/genai`)
-- **Styling**: CSS Modules / Plain CSS
+- **Frontend**: React 18 with Vite 7
+- **AI/ML**: Google Gemini API (`@google/genai`), with optional OpenRouter support
+- **Icons**: `lucide-react`
+- **Storage**: `localforage` for client-side persistence
+- **Image tooling**: `sharp` (build-time scripts), `gifshot`
+- **Styling**: Plain CSS
+- **Hosting**: GitHub Pages via GitHub Actions
 
 ## 🚀 Getting Started
 
 ### Prerequisites
 
 - Node.js (v18 or higher)
-- A Google Gemini API Key
+- A [Google Gemini API key](https://aistudio.google.com/apikey) or an [OpenRouter API key](https://openrouter.ai/keys)
 
 ### Installation & Setup
 
 1.  **Clone the repository:**
     ```bash
     git clone https://github.com/seehiong/banana-levelup.git
-    cd banana-level-up
+    cd banana-levelup
     ```
 
-2.  **Set up your environment variables:**
-    Create a `.env` file in the root of the project and add your Gemini API key:
-    ```text
-    GEMINI_API_KEY="YOUR_GEMINI_API_KEY"
-    ```
-
-3.  **Install dependencies and generate base characters:**
-    Run the combined setup script. This will install all `npm` packages and then run the script to generate the initial character images.
-    The base images are required before you can generate rotations.
+2.  **Install dependencies:**
+    The base character images are already provided in the `public/` directory, so no generation is required to run the app.
     ```bash
-    # Installs dependencies AND generates base character images
-    npm run setup 
+    npm install
     ```
-    The images are saved in the `public/` directory.
 
-4.  **Run the development server:**
+3.  **Run the development server:**
     ```bash
     npm run dev
     ```
     The application will be available at `http://localhost:5173`.
 
-5.  **(Optional) Generate Character Rotations:**
-    To generate the 4-directional rotational views for the characters, run the `setup-rotations` script. **Note:** You must generate the base characters first (see step 3). The 8-view JPEGs were added manually and are not generated by this script.
-    ```bash
-    # Generate rotations for ALL characters
-    npm run setup-rotations
-    # Or, generate for a single character (e.g., code-monkey)
-    npm run setup-rotations -- sprout-mole
-    ```
+4.  **Add your API key in the app:**
+    Click the AI Assistant chat bubble in the bottom-right corner, pick your provider (Google or OpenRouter), and paste your key. It is stored in your browser's local storage only — there is no backend and the key is never committed or uploaded anywhere.
+
+### (Optional) Regenerating Character Art
+
+The image-generation scripts run in Node and need a key on disk. Copy the example file and fill it in:
+
+```bash
+cp .env.example .env
+```
+
+```text
+GEMINI_API_KEY="YOUR_GEMINI_API_KEY"
+```
+
+> `.env` is gitignored — never commit it.
+
+Then generate the base characters first, followed by their rotations:
+
+```bash
+# 1. Base character images
+npm run setup-basechar
+
+# 2. 4-directional rotational views for ALL characters
+npm run setup-rotations
+
+# Or, generate rotations for a single character
+npm run setup-rotations -- sprout-mole
+```
+
+**Note:** The 8-view JPEGs were added manually and are not produced by these scripts.
 
 ### Available Scripts
 
 - `npm run dev`: Starts the Vite development server.
 - `npm run build`: Builds the application for production.
 - `npm run preview`: Serves the production build locally.
-- `npm run setup`: Installs dependencies and generates base character images.
 - `npm run setup-basechar`: Generates only the base character images (useful if you've already installed dependencies).
 - `npm run setup-rotations`: Generates 360° rotational views for characters.
 
+## 🚢 Deployment
+
+Pushes to `main` are built and published to GitHub Pages by [.github/workflows/deploy.yml](.github/workflows/deploy.yml). The site is served from a subpath, which is why `vite.config.js` sets `base: '/banana-levelup/'` — change this if you fork under a different repository name.
+
+No secrets are needed in CI: the app has no backend and users supply their own API key at runtime.
+
+## 🔒 A Note on API Keys
+
+This is a client-side-only demo. Your API key is held in browser local storage and sent directly from your browser to Google or OpenRouter. That is fine for a personal demo, but it means the key is visible to anything running in your browser — use a key with limited quota and revoke it when you're done.
+
 ## 📜 License
 
-This project is licensed under the MIT License. See the LICENSE file for details.
+This project is licensed under the [MIT License](LICENSE).
